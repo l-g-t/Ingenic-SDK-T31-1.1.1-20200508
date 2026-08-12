@@ -751,6 +751,30 @@ static struct jz_spi_support jz_spi_support_table[] = {
 #endif
 		},
 	},
+
+    {
+		.name           = "XM25QH256C",
+		.id_manufactory = 0x204019,
+		.page_size       = 256,
+		.sector_size      = (4 * 1024),
+		.addr_size = 4,
+		.size           = (32 * 1024 * 1024),
+		.quad_mode = {
+			.dummy_byte = 8,
+			.RDSR_CMD = CMD_RDSR,
+			.WRSR_CMD = CMD_WRSR,
+			.RDSR_DATE = 0x2,//the data is write the spi status register for QE bit
+			.RD_DATE_SIZE = 1,
+			.WRSR_DATE = 0x2,//this bit should be the flash QUAD mode enable
+			.WD_DATE_SIZE = 1,
+			.cmd_read = CMD_QUAD_READ,
+#ifdef CONFIG_JZ_SFC
+			.sfc_mode = TRAN_SPI_QUAD,
+#endif
+		},
+	},
+
+
 };
 
 #endif /* __JZ_SPI_H__ */
