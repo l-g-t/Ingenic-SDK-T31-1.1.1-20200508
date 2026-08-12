@@ -24,23 +24,21 @@ jobs:
           echo "=== toolchain 目录内容 ==="
           ls -lah sdk/toolchain/
           
-          # 创建解压目标目录
           mkdir -p /opt/toolchain
           
-          # 用 7z 解压 part1 即可自动串联其他分卷
-          7z x sdk/toolchain/toolchain.part1.rar -o/opt/toolchain
+          # 用 unrar 解压分卷（part1 会自动串联其余分卷）
+          unrar x sdk/toolchain/toolchain.part1.rar /opt/toolchain/
           
           echo "=== 解压后的目录结构 ==="
-          find /opt/toolchain -maxdepth 3 -type d
+          find /opt/toolchain -maxdepth 3 -type d | head -20
           
           echo "=== 查找 mips gcc ==="
           find /opt/toolchain -maxdepth 4 -name "mips*-gcc" -o -name "mips*-linux*-gcc" | head -10
           
-          # 把找到的 toolchain/bin 加入 PATH
-          # 通常君正工具链在类似 /opt/toolchain/mips-gcc472-glibc216-64bit/bin 这样的目录下
+          # 动态查找 toolchain/bin 目录
           TC_BIN=$(find /opt/toolchain -maxdepth 3 -type d -name "bin" | head -1)
           if [ -z "$TC_BIN" ]; then
-            echo "未找到 toolchain/bin 目录，退出"
+            echo "错误：未找到 toolchain/bin 目录"
             exit 1
           fi
           echo "Toolchain bin: $TC_BIN"
