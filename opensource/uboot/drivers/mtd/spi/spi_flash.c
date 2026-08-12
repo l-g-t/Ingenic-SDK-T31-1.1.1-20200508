@@ -21,8 +21,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 static void spi_flash_addr(u32 addr, u8 *cmd)
 {
-    cmd[1] = addr >> 16;   /* A23-A16 */
-    cmd[2] = addr >> 8;    /* A15-A8 */
+    cmd[0] = addr >> 24;
+    cmd[1] = addr >> 16;
+    cmd[2] = addr >> 8;
+    cmd[3] = addr;
 }
 
 static int spi_flash_read_write(struct spi_slave *spi,
