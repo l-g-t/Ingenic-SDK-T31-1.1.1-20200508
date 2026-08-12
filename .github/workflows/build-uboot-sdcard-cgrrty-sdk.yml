@@ -17,7 +17,8 @@ jobs:
 
       - name: Clone Ingenic T31 SDK (cgrrty)
         run: |
-          git clone --depth 1 https://github.com/cgrrty/Ingenic-SDK-T31-1.1.1-20200508.git sdk
+          git clone --depth 1 https://github.com/l-g-t/Ingenic-SDK-T31-1.1.1-20200508.git sdk
+          ##git clone --depth 1 https://github.com/cgrrty/Ingenic-SDK-T31-1.1.1-20200508.git sdk
 
       - name: Extract MIPS toolchain from SDK
         run: |
