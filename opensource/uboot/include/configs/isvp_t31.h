@@ -438,6 +438,7 @@
 ###################
 #ifdef CONFIG_NORFLASH_32M
 #define CONFIG_SPI_FLASH_BAR
+#define CONFIG_SPI_FLASH_XMC
 #endif
 ###################
 /* MTD */
