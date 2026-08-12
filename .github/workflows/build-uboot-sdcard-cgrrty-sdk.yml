@@ -21,21 +21,20 @@ jobs:
 
       - name: Extract MIPS toolchain from SDK
         run: |
-          echo "=== toolchain 目录内容 ==="
-          ls -lah sdk/toolchain/
-          
+          echo "=== 1. 解压 RAR 分卷 ==="
           mkdir -p /opt/toolchain
-          
-          # 用 unrar 解压分卷（part1 会自动串联其余分卷）
           unrar x sdk/toolchain/toolchain.part1.rar /opt/toolchain/
           
-          echo "=== 解压后的目录结构 ==="
-          find /opt/toolchain -maxdepth 3 -type d | head -20
+          echo "=== 2. 查看解压出的内容 ==="
+          find /opt/toolchain -maxdepth 2 -type f
           
-          echo "=== 查找 mips gcc ==="
-          find /opt/toolchain -maxdepth 4 -name "mips*-gcc" -o -name "mips*-linux*-gcc" | head -10
+          echo "=== 3. 解压 64bit gcc-4.7.2 工具链 (T31 用这个) ==="
+          7z x /opt/toolchain/gcc_472/mips-gcc472-glibc216-64bit-r2.3.3.7z -o/opt/toolchain
           
-          # 动态查找 toolchain/bin 目录
+          echo "=== 4. 查找 gcc 路径 ==="
+          find /opt/toolchain -maxdepth 4 -name "mips*-gcc" | head -10
+          
+          echo "=== 5. 定位 bin 目录并加入 PATH ==="
           TC_BIN=$(find /opt/toolchain -maxdepth 3 -type d -name "bin" | head -1)
           if [ -z "$TC_BIN" ]; then
             echo "错误：未找到 toolchain/bin 目录"
@@ -43,10 +42,15 @@ jobs:
           fi
           echo "Toolchain bin: $TC_BIN"
           echo "$TC_BIN" >> "$GITHUB_PATH"
+          
+          echo "=== 6. 验证交叉编译器 ==="
+          export PATH="$TC_BIN:$PATH"
+          mips-linux-gnu-gcc --version || true
 
       - name: Build U-Boot for SD card boot (T31X)
         working-directory: sdk/opensource/uboot
         run: |
+          export PATH="$(cat $GITHUB_PATH | tr '\n' ':')$PATH"
           export CROSS_COMPILE=mips-linux-gnu-
           make distclean
           make isvp_t31_msc0_ddr128M
