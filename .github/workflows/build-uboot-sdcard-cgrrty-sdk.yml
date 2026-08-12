@@ -13,7 +13,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential bison flex bc libssl-dev \
             device-tree-compiler u-boot-tools git \
-            libncurses-dev python3 p7zip-full lzop
+            libncurses-dev python3 p7zip-full unrar
 
       - name: Clone Ingenic T31 SDK (cgrrty)
         run: |
@@ -21,14 +21,35 @@ jobs:
 
       - name: Extract MIPS toolchain from SDK
         run: |
-          find sdk/toolchain -iname "*.7z"
-          7z x sdk/toolchain/gcc_472/mips-gcc472-glibc216-64bit-r2.3.3.7z -o/opt/toolchain
-          find /opt/toolchain -maxdepth 3 -iname "*gcc" | head -5
-          echo "/opt/toolchain/mips-gcc472-glibc216-64bit-r2.3.3/bin" >> "$GITHUB_PATH"
+          echo "=== toolchain 目录内容 ==="
+          ls -lah sdk/toolchain/
+          
+          # 创建解压目标目录
+          mkdir -p /opt/toolchain
+          
+          # 用 7z 解压 part1 即可自动串联其他分卷
+          7z x sdk/toolchain/toolchain.part1.rar -o/opt/toolchain
+          
+          echo "=== 解压后的目录结构 ==="
+          find /opt/toolchain -maxdepth 3 -type d
+          
+          echo "=== 查找 mips gcc ==="
+          find /opt/toolchain -maxdepth 4 -name "mips*-gcc" -o -name "mips*-linux*-gcc" | head -10
+          
+          # 把找到的 toolchain/bin 加入 PATH
+          # 通常君正工具链在类似 /opt/toolchain/mips-gcc472-glibc216-64bit/bin 这样的目录下
+          TC_BIN=$(find /opt/toolchain -maxdepth 3 -type d -name "bin" | head -1)
+          if [ -z "$TC_BIN" ]; then
+            echo "未找到 toolchain/bin 目录，退出"
+            exit 1
+          fi
+          echo "Toolchain bin: $TC_BIN"
+          echo "$TC_BIN" >> "$GITHUB_PATH"
 
       - name: Build U-Boot for SD card boot (T31X)
         working-directory: sdk/opensource/uboot
         run: |
+          export CROSS_COMPILE=mips-linux-gnu-
           make distclean
           make isvp_t31_msc0_ddr128M
           echo "=== 编译产物列表 ==="
