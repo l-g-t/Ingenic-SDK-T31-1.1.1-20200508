@@ -1,0 +1,38 @@
+name: build-uboot-sdcard-recovery
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bison flex bc libssl-dev \
+            device-tree-compiler u-boot-tools git \
+            libncurses-dev python3
+
+      - name: Clone MIPS toolchain
+        run: |
+          git clone --depth 1 https://github.com/Dafang-Hacks/mips-gcc472-glibc216-64bit.git /opt/toolchain
+          echo "/opt/toolchain/bin" >> "$GITHUB_PATH"
+
+      - name: Clone OpenIPC u-boot-ingenic
+        run: |
+          git clone --depth 1 https://github.com/OpenIPC/u-boot-ingenic.git
+
+      - name: Build U-Boot for SD card boot (T31X)
+        working-directory: u-boot-ingenic
+        run: |
+          make distclean
+          make isvp_t31_msc0_ddr128M
+          ls -lh u-boot-with-spl.bin
+
+      - name: Upload u-boot-with-spl.bin
+        uses: actions/upload-artifact@v4
+        with:
+          name: u-boot-with-spl-t31x-sdboot
+          path: u-boot-ingenic/u-boot-with-spl.bin
