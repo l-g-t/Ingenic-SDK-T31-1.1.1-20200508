@@ -10,7 +10,6 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          # 增加 lzop（编译 u-boot-lzo.img 必需）
           sudo apt-get install -y --no-install-recommends \
             build-essential bison flex bc libssl-dev \
             device-tree-compiler u-boot-tools git \
@@ -28,28 +27,30 @@ jobs:
       - name: Build U-Boot for SD card boot (T31X)
         working-directory: u-boot-ingenic
         env:
-          # 统一在这里声明交叉编译变量，避免每一步都写
           CROSS_COMPILE: mips-linux-gnu-
         run: |
-          # 1. 彻底清理
           make distclean
-
-          # 2. 配置
           make isvp_t31_msc0_ddr128M
-
-          # 3. 编译（显式指定目标，避免某些 Makefile 版本默认目标不一致）
           make -j$(nproc)
 
-          # 4. 检查产物
-          if [ -f u-boot-with-spl.bin ]; then
-            ls -lh u-boot-with-spl.bin
+          # 列出所有生成的 bin 文件，方便调试
+          ls -lh *.bin
+
+          # 检查实际生成的产物
+          if [ -f u-boot-lzo-with-spl-mbr-gpt.bin ]; then
+            echo "Found u-boot-lzo-with-spl-mbr-gpt.bin"
+          elif [ -f u-boot-lzo-with-spl.bin ]; then
+            echo "Found u-boot-lzo-with-spl.bin"
           else
-            echo "Error: u-boot-with-spl.bin not found!"
+            echo "Error: No expected output binary found!"
             exit 1
           fi
 
-      - name: Upload u-boot-with-spl.bin
+      - name: Upload u-boot binaries
         uses: actions/upload-artifact@v4
         with:
-          name: u-boot-with-spl-t31x-sdboot
-          path: u-boot-ingenic/u-boot-with-spl.bin
+          name: u-boot-t31x-sdboot
+          # 上传两个产物（如果都存在）
+          path: |
+            u-boot-ingenic/u-boot-lzo-with-spl-mbr-gpt.bin
+            u-boot-ingenic/u-boot-lzo-with-spl.bin
