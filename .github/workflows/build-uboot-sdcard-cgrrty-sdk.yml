@@ -51,6 +51,17 @@ jobs:
           export PATH="$TC_BIN:$PATH"
           mips-linux-gnu-gcc --version || true
 
+
+      - name: Locate flash ID table in source
+        run: |
+          echo "=== 搜索包含 GM25Q128A 字样的文件 ==="
+          grep -rn "GM25Q128A" sdk/opensource/uboot/ || true
+          echo ""
+          echo "=== 搜索包含 jz_spi_support_table 字样的文件 ==="
+          grep -rln "jz_spi_support_table" sdk/opensource/uboot/ || true
+
+
+
       - name: Build U-Boot for SD card boot (T31X)
         working-directory: sdk/opensource/uboot
         run: |
