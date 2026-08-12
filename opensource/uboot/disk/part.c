@@ -575,13 +575,40 @@ int get_device_and_partition(const char *ifname, const char *dev_part_str,
 	 * If user didn't specify a partition number, or did specify something
 	 * other than "auto", use that partition number directly.
 	 */
+
+
+	    if (part != PART_AUTO) {
+        ret = get_partition_info(*dev_desc, part, info);
+        if (ret) {
+            /* 分区1无效时自动回退到整个设备（支持无分区表的FAT） */
+            if (part == 1 && allow_whole_dev) {
+                printf("** Invalid partition %d, trying whole device **\n", part);
+                part = 0;
+                info->start = 0;
+                info->size = (*dev_desc)->lba;
+                info->blksz = (*dev_desc)->blksz;
+                info->bootable = 0;
+                strcpy((char *)info->type, BOOT_PART_TYPE);
+                strcpy((char *)info->name, "Whole Disk");
+#ifdef CONFIG_PARTITION_UUIDS
+                info->uuid[0] = 0;
+#endif
+                (*dev_desc)->log2blksz = LOG2((*dev_desc)->blksz);
+                ret = 0;
+                goto cleanup;
+            }
+            printf("** Invalid partition %d **\n", part);
+            goto cleanup;
+        }
+    }
+	/*
 	if (part != PART_AUTO) {
 		ret = get_partition_info(*dev_desc, part, info);
 		if (ret) {
 			printf("** Invalid partition %d **\n", part);
 			goto cleanup;
 		}
-	} else {
+	} */ else {
 		/*
 		 * Find the first bootable partition.
 		 * If none are bootable, fall back to the first valid partition.
