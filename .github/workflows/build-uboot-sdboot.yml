@@ -10,16 +10,15 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          # 增加 lib32z1 等兼容库，防止旧工具链在 64 位系统下无法执行
+          # 增加 lzop（编译 u-boot-lzo.img 必需）
           sudo apt-get install -y --no-install-recommends \
             build-essential bison flex bc libssl-dev \
             device-tree-compiler u-boot-tools git \
-            libncurses-dev python3 lib32z1
+            libncurses-dev python3 lib32z1 lzop
 
       - name: Clone MIPS toolchain
         run: |
           git clone --depth 1 https://github.com/Dafang-Hacks/mips-gcc472-glibc216-64bit.git /opt/toolchain
-          # 确保路径被加入环境
           echo "/opt/toolchain/bin" >> "$GITHUB_PATH"
 
       - name: Clone OpenIPC u-boot-ingenic
@@ -28,18 +27,20 @@ jobs:
 
       - name: Build U-Boot for SD card boot (T31X)
         working-directory: u-boot-ingenic
+        env:
+          # 统一在这里声明交叉编译变量，避免每一步都写
+          CROSS_COMPILE: mips-linux-gnu-
         run: |
-          # 1. 彻底清理环境
+          # 1. 彻底清理
           make distclean
 
-          # 2. 配置时必须指定 CROSS_COMPILE，否则它会尝试用系统 gcc 探测
-          # 注意：这里使用 mips-linux-gnu- 
-          make isvp_t31_msc0_ddr128M CROSS_COMPILE=mips-linux-gnu-
+          # 2. 配置
+          make isvp_t31_msc0_ddr128M
 
-          # 3. 开始正式编译，使用多线程加速
-          make -j$(nproc) CROSS_COMPILE=mips-linux-gnu-
+          # 3. 编译（显式指定目标，避免某些 Makefile 版本默认目标不一致）
+          make -j$(nproc)
 
-          # 4. 检查生成的文件
+          # 4. 检查产物
           if [ -f u-boot-with-spl.bin ]; then
             ls -lh u-boot-with-spl.bin
           else
