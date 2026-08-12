@@ -13,7 +13,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential bison flex bc libssl-dev \
             device-tree-compiler u-boot-tools git \
-            libncurses-dev python3 p7zip-full unrar
+            libncurses-dev python3 p7zip-full unrar libarchive-tools
 
       - name: Clone Ingenic T31 SDK (cgrrty)
         run: |
@@ -25,16 +25,20 @@ jobs:
           mkdir -p /opt/toolchain
           unrar x sdk/toolchain/toolchain.part1.rar /opt/toolchain/
           
-          echo "=== 2. 查看解压出的内容 ==="
+          echo "=== 2. 查看 RAR 解压出的内容 ==="
           find /opt/toolchain -maxdepth 2 -type f
           
-          echo "=== 3. 解压 64bit gcc-4.7.2 工具链 (T31 用这个) ==="
-          7z x /opt/toolchain/gcc_472/mips-gcc472-glibc216-64bit-r2.3.3.7z -o/opt/toolchain
+          echo "=== 3. 用 bsdtar 解压 64bit gcc-4.7.2 工具链 ==="
+          # 7z 会拒绝包含 .. 的符号链接，改用 bsdtar 完美支持
+          bsdtar -xf /opt/toolchain/gcc_472/mips-gcc472-glibc216-64bit-r2.3.3.7z -C /opt/toolchain
           
-          echo "=== 4. 查找 gcc 路径 ==="
+          echo "=== 4. 确认解压后的目录结构 ==="
+          find /opt/toolchain -maxdepth 3 -type d | head -20
+          
+          echo "=== 5. 查找 mips gcc ==="
           find /opt/toolchain -maxdepth 4 -name "mips*-gcc" | head -10
           
-          echo "=== 5. 定位 bin 目录并加入 PATH ==="
+          echo "=== 6. 定位 bin 目录并加入 PATH ==="
           TC_BIN=$(find /opt/toolchain -maxdepth 3 -type d -name "bin" | head -1)
           if [ -z "$TC_BIN" ]; then
             echo "错误：未找到 toolchain/bin 目录"
@@ -43,7 +47,7 @@ jobs:
           echo "Toolchain bin: $TC_BIN"
           echo "$TC_BIN" >> "$GITHUB_PATH"
           
-          echo "=== 6. 验证交叉编译器 ==="
+          echo "=== 7. 验证交叉编译器 ==="
           export PATH="$TC_BIN:$PATH"
           mips-linux-gnu-gcc --version || true
 
