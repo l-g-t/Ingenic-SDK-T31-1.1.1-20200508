@@ -616,8 +616,11 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	puts("\n");
 #ifndef CONFIG_SPI_FLASH_BAR
 	if (flash->size > SPI_FLASH_16MB_BOUN) {
-		puts("SF: Warning - Only lower 16MiB accessible,");
-		puts(" Full access #define CONFIG_SPI_FLASH_BAR\n");
+		/* 君正 SFC 驱动已支持 4-Byte 模式，无需 BAR 即可访问完整容量 */
+		if (flash->addr_size != 4) {
+			puts("SF: Warning - Only lower 16MiB accessible,");
+			puts(" Full access #define CONFIG_SPI_FLASH_BAR\n");
+		}
 	}
 #endif
 
