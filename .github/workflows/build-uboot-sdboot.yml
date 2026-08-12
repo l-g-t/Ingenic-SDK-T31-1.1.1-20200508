@@ -10,14 +10,16 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
+          # 增加 lib32z1 等兼容库，防止旧工具链在 64 位系统下无法执行
           sudo apt-get install -y --no-install-recommends \
             build-essential bison flex bc libssl-dev \
             device-tree-compiler u-boot-tools git \
-            libncurses-dev python3
+            libncurses-dev python3 lib32z1
 
       - name: Clone MIPS toolchain
         run: |
           git clone --depth 1 https://github.com/Dafang-Hacks/mips-gcc472-glibc216-64bit.git /opt/toolchain
+          # 确保路径被加入环境
           echo "/opt/toolchain/bin" >> "$GITHUB_PATH"
 
       - name: Clone OpenIPC u-boot-ingenic
@@ -27,9 +29,23 @@ jobs:
       - name: Build U-Boot for SD card boot (T31X)
         working-directory: u-boot-ingenic
         run: |
+          # 1. 彻底清理环境
           make distclean
-          make isvp_t31_msc0_ddr128M
-          ls -lh u-boot-with-spl.bin
+
+          # 2. 配置时必须指定 CROSS_COMPILE，否则它会尝试用系统 gcc 探测
+          # 注意：这里使用 mips-linux-gnu- 
+          make isvp_t31_msc0_ddr128M CROSS_COMPILE=mips-linux-gnu-
+
+          # 3. 开始正式编译，使用多线程加速
+          make -j$(nproc) CROSS_COMPILE=mips-linux-gnu-
+
+          # 4. 检查生成的文件
+          if [ -f u-boot-with-spl.bin ]; then
+            ls -lh u-boot-with-spl.bin
+          else
+            echo "Error: u-boot-with-spl.bin not found!"
+            exit 1
+          fi
 
       - name: Upload u-boot-with-spl.bin
         uses: actions/upload-artifact@v4
