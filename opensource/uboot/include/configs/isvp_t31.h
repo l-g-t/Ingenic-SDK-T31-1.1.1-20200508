@@ -435,11 +435,11 @@
 #define CONFIG_UBOOT_OFFSET     CONFIG_SPL_MAX_SIZE/*(26  * 1024)*/
 #endif
 #endif /* CONFIG_SPL_SFC_SUPPORT */
-
+###################
 #ifdef CONFIG_NORFLASH_32M
 #define CONFIG_SPI_FLASH_BAR
 #endif
-
+###################
 /* MTD */
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_PARTITIONS
